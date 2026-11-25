@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nongcebo & Moira</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background-color: purple;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    h1 {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+    }
+    .nongcebo { color: red; }
+    .moira { color: darkblue; }
+    .chat-box {
+      width: 100%;
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    #messages {
+      min-height: 240px;
+      max-height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .msg {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      white-space: pre-wrap;
+    }
+    .user { background: rgba(255, 255, 255, 0.25); align-self: flex-end; }
+    .ai { background: rgba(0, 0, 0, 0.35); align-self: flex-start; }
+    form { display: flex; gap: 0.5rem; }
+    input { flex: 1; padding: 0.75rem; border-radius: 8px; border: none; }
+    button {
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      background: darkblue;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <span class="nongcebo">Nongcebo</span> &amp; <span class="moira">Moira</span>
+  </h1>
+
+  <div class="chat-box">
+    <div id="messages"></div>
+    <form id="chat-form">
+      <input id="prompt" type="text" placeholder="Say something to Nongcebo & Moira..." required />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const API_KEY = "AQ.Ab8RN6KwkDvUTD2oPihRX_ZI9SziLFLt0vxSL6lfAT-MDzb50g";
+
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("prompt");
+    const messages = document.getElementById("messages");
+
+    function addMessage(text, type) {
+      const box = document.createElement("div");
+      box.className = "msg " + type;
+      box.textContent = text;
+      messages.appendChild(box);
+      messages.scrollTop = messages.scrollHeight;
+      return box;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, "user");
+      input.value = "";
+      const replyBox = addMessage("Thinking...", "ai");
+
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text }] }]
+            })
+          }
+        );
+        const data = await res.json();
+        replyBox.textContent =
+          data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+          data?.error?.message ||
+          "No response received.";
+      } catch {
+        replyBox.textContent = "Something went wrong connecting to the AI.";
+      }
+    });
+  </script>
+</body>
+</html>
